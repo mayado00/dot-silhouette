@@ -44,13 +44,18 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     canvas.width = dims.w * dpr;
     canvas.height = dims.h * dpr;
 
-    const padding = 40;
-    const drawW = dims.w - padding * 2;
-    const drawH = dims.h - padding * 2;
+    const padding = 60;
+    const availW = dims.w - padding * 2;
+    const availH = dims.h - padding * 2;
+
+    // 정방형 비율 유지: 가로/세로 중 짧은 쪽에 맞춤
+    const size = Math.min(availW, availH);
+    const offsetX = padding + (availW - size) / 2;
+    const offsetY = padding + (availH - size) / 2;
 
     dotsRef.current = positions.map((p, i) => ({
-      px: padding + p.x * drawW,
-      py: padding + p.y * drawH,
+      px: offsetX + p.x * size,
+      py: offsetY + p.y * size,
       baseRadius: 1.5 + Math.random() * 1.5,
       donor: getDonor(i),
       // 개별 반짝임을 위한 파라미터
