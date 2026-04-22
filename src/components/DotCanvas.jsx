@@ -51,9 +51,17 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     dotsRef.current = positions.map((p, i) => ({
       px: padding + p.x * drawW,
       py: padding + p.y * drawH,
-      baseRadius: 2 + Math.random() * 1.5,
+      baseRadius: 1.5 + Math.random() * 1.5,
       donor: getDonor(i),
+      // 개별 반짝임을 위한 파라미터
       phase: Math.random() * Math.PI * 2,
+      speed: 0.008 + Math.random() * 0.025,       // 각자 다른 반짝임 속도
+      glowPhase: Math.random() * Math.PI * 2,      // 글로우 위상
+      glowSpeed: 0.003 + Math.random() * 0.012,    // 글로우 속도 (느리게)
+      flickerTimer: Math.random() * 300,            // 랜덤 깜빡임 타이머
+      flickerInterval: 150 + Math.random() * 400,   // 깜빡임 주기
+      flickerDuration: 15 + Math.random() * 30,     // 깜빡임 지속 시간
+      hue: -10 + Math.random() * 30,               // 색상 미세 변화 (따뜻한 금~주황)
     }));
   }, [dims, positions, getDonor]);
 
@@ -65,18 +73,65 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
+    let frame = 0;
+
     const draw = () => {
-      phaseRef.current += 0.015;
+      frame++;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, dims.w, dims.h);
 
       for (const dot of dotsRef.current) {
-        const pulse = Math.sin(phaseRef.current + dot.phase) * 0.5 + 0.5;
-        const r = dot.baseRadius + pulse * 1;
-        const alpha = 0.4 + pulse * 0.4;
+        // 기본 반짝임 (사인파, 각자 다른 속도)
+        dot.phase += dot.speed;
+        dot.glowPhase += dot.glowSpeed;
+        dot.flickerTimer++;
+
+        const basePulse = Math.sin(dot.phase) * 0.5 + 0.5;
+        const glowPulse = Math.sin(dot.glowPhase) * 0.5 + 0.5;
+
+        // 랜덤 깜빡임: 가끔 확 밝아졌다 사라지는 효과
+        let flicker = 0;
+        if (dot.flickerTimer > dot.flickerInterval) {
+          const t = dot.flickerTimer - dot.flickerInterval;
+          if (t < dot.flickerDuration) {
+            // 밝아졌다 서서히 꺼지는 커브
+            const progress = t / dot.flickerDuration;
+            flicker = Math.sin(progress * Math.PI) * 0.8;
+          } else {
+            // 리셋
+            dot.flickerTimer = 0;
+            dot.flickerInterval = 150 + Math.random() * 400;
+            dot.flickerDuration = 15 + Math.random() * 30;
+          }
+        }
+
+        // 종합 밝기
+        const brightness = 0.15 + basePulse * 0.35 + glowPulse * 0.2 + flicker;
+        const alpha = Math.min(brightness, 1);
+
+        // 반지름: 밝을 때 살짝 커짐
+        const r = dot.baseRadius + basePulse * 0.8 + flicker * 2;
+
+        // 글로우 (밝은 도트 주변에 부드러운 빛)
+        if (alpha > 0.45) {
+          const glowR = r * 3.5;
+          const grad = ctx.createRadialGradient(
+            dot.px, dot.py, r * 0.5,
+            dot.px, dot.py, glowR,
+          );
+          const glowAlpha = (alpha - 0.45) * 0.5;
+          grad.addColorStop(0, `rgba(255, ${190 + dot.hue}, ${100 + dot.hue}, ${glowAlpha})`);
+          grad.addColorStop(1, `rgba(255, ${190 + dot.hue}, ${100 + dot.hue}, 0)`);
+          ctx.beginPath();
+          ctx.arc(dot.px, dot.py, glowR, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        // 코어 도트
         ctx.beginPath();
         ctx.arc(dot.px, dot.py, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 200, 120, ${alpha})`;
+        ctx.fillStyle = `rgba(255, ${195 + dot.hue}, ${110 + dot.hue}, ${alpha})`;
         ctx.fill();
       }
 
