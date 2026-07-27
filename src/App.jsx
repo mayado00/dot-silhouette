@@ -17,7 +17,7 @@ export default function App() {
     try {
       // 'galaxy'는 이미지 대신 절차적 나선 은하 좌표 생성
       const pts = src === 'galaxy'
-        ? generateGalaxyPositions({ count: 900, arms: 3 })
+        ? generateGalaxyPositions({ count: 1600, arms: 3 })
         : await imageToPositions(src, { maxDots: 800, sampleRes: 200 });
       setPositions(pts);
       setImageLoaded(true);
