@@ -219,12 +219,32 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
         baseSize = 1.2 + Math.random() * 2;
         palette = CORE_PALETTE;
       } else if (p.zone === 'arm') {
-        // 나선팔: 작은 원 위주 + 가끔 반짝이, 팔별 색상 계열
+        // 나선팔: 크기 다양한 원 + 반짝이, 팔별 색상 계열 (+가끔 다른 색 섞임)
         const r = Math.random();
-        shape = r < 0.78 ? 'circle' : r < 0.93 ? 'sparkle' : 'star4';
-        const isAccent = shape !== 'circle' && Math.random() < 0.12;
-        baseSize = isAccent ? 4.5 + Math.random() * 3.5 : 1.2 + Math.random() * 2.2;
-        palette = ARM_PALETTES[(p.arm ?? 0) % ARM_PALETTES.length];
+        shape = r < 0.75 ? 'circle' : r < 0.92 ? 'sparkle' : 'star4';
+        const isAccent = shape !== 'circle' && Math.random() < 0.15;
+        // 크기 편차를 크게: 작은 점부터 굵직한 방울까지 (부피감)
+        const sizeRoll = Math.random();
+        baseSize = isAccent
+          ? 5 + Math.random() * 4
+          : sizeRoll < 0.55
+            ? 1 + Math.random() * 1.8      // 작은 점 다수
+            : sizeRoll < 0.88
+              ? 2.5 + Math.random() * 2.5  // 중간
+              : 4.5 + Math.random() * 3;   // 굵은 방울 소수
+        const mixRoll = Math.random();
+        palette = mixRoll < 0.72
+          ? ARM_PALETTES[(p.arm ?? 0) % ARM_PALETTES.length]  // 팔 고유색
+          : mixRoll < 0.87
+            ? ARM_PALETTES[Math.floor(Math.random() * ARM_PALETTES.length)] // 다른 팔 색 섞임
+            : CORE_PALETTE;  // 골드/화이트 스프링클
+      } else if (p.zone === 'haze') {
+        // 헤이즈: 팔 주변 희미한 먼지 (작고 어둡게)
+        shape = 'circle';
+        baseSize = 0.7 + Math.random() * 1.4;
+        palette = Math.random() < 0.6
+          ? ARM_PALETTES[(p.arm ?? 0) % ARM_PALETTES.length]
+          : BG_PALETTE;
       } else if (p.zone === 'bg') {
         // 배경 별: 아주 작고 희미하게
         shape = Math.random() < 0.6 ? 'circle' : 'sparkle';
