@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 /**
  * 기부자 사연 팝업
  */
-export default function StoryPopup({ contributor, onClose }) {
+export default function StoryPopup({ contributor, onClose, label = '기부 사연' }) {
   const overlayRef = useRef(null);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function StoryPopup({ contributor, onClose }) {
             letterSpacing: 2,
           }}
         >
-          기부 사연
+          {label}
         </p>
         <p
           style={{

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import DotCanvas from './components/DotCanvas';
 import StoryPopup from './components/StoryPopup';
 import ImageUploader from './components/ImageUploader';
+import MessageBoard from './components/MessageBoard';
 import contributors from './data/contributors';
 import { imageToPositions } from './utils/imageToPositions';
 import { generateGalaxyPositions } from './utils/galaxyPositions';
@@ -11,6 +12,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [selectedDonor, setSelectedDonor] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [boardMode, setBoardMode] = useState(false);
 
   const handleImageLoad = useCallback(async (src) => {
     setLoading(true);
@@ -46,8 +48,13 @@ export default function App() {
       overflow: 'hidden',
       position: 'relative',
     }}>
-      {!imageLoaded && !loading && (
-        <ImageUploader onImageLoad={handleImageLoad} />
+      {boardMode && <MessageBoard onBack={() => setBoardMode(false)} />}
+
+      {!boardMode && !imageLoaded && !loading && (
+        <ImageUploader
+          onImageLoad={handleImageLoad}
+          onOpenBoard={() => setBoardMode(true)}
+        />
       )}
 
       {loading && (
@@ -64,7 +71,7 @@ export default function App() {
         </div>
       )}
 
-      {imageLoaded && (
+      {!boardMode && imageLoaded && (
         <>
           <header style={{
             position: 'absolute',

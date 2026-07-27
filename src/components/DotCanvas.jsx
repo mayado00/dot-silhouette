@@ -11,12 +11,20 @@ const PALETTE = [
   { r: 178, g: 166, b: 60 },   // 올리브 골드
 ];
 
-// 은하 코어용 따뜻한 팔레트 (화이트~골드)
+// 은하 이너 코어: 화이트 위주 (강한 중심광)
 const CORE_PALETTE = [
-  { r: 255, g: 250, b: 235 },  // 웜 화이트
+  { r: 255, g: 255, b: 255 },  // 퓨어 화이트
+  { r: 255, g: 255, b: 255 },  // 퓨어 화이트 (가중치↑)
+  { r: 255, g: 252, b: 244 },  // 웜 화이트
+  { r: 255, g: 244, b: 214 },  // 아이보리 골드
+];
+
+// 벌지(팽대부): 골드~앰버
+const BULGE_PALETTE = [
   { r: 255, g: 226, b: 150 },  // 소프트 골드
   { r: 255, g: 200, b: 120 },  // 골드
   { r: 250, g: 240, b: 220 },  // 아이보리
+  { r: 255, g: 250, b: 235 },  // 웜 화이트
 ];
 
 // 나선팔별 색상 계열 (팔마다 다른 색으로 나선 흐름이 드러남)
@@ -46,6 +54,13 @@ const BG_PALETTE = [
   { r: 244, g: 244, b: 240 },
   { r: 255, g: 240, b: 200 },
   { r: 200, g: 210, b: 230 },
+];
+
+// 미점등 도트: 어두운 보랏빛 (메시지가 등록되면 색을 입는다)
+const UNLIT_PALETTE = [
+  { r: 88, g: 70, b: 130 },
+  { r: 72, g: 58, b: 110 },
+  { r: 100, g: 82, b: 145 },
 ];
 
 // 모양 종류: 확률 가중치 (원과 작은 별이 다수, 큰 장식은 소수)
@@ -163,10 +178,12 @@ function drawShape(ctx, shape, x, y, r, rot) {
  *
  * @param {Object} props
  * @param {{x:number, y:number}[]} props.positions  - 정규화 좌표 (0~1)
- * @param {{name:string, message:string}[]} props.contributors - 기부자 데이터
+ * @param {{name:string, message:string}[]} props.contributors - 기부자 데이터 (순환 매핑)
+ * @param {(object|null)[]} [props.assignments] - positions와 같은 길이. 지정 시
+ *        assignments[i]가 있는 도트만 점등, null인 도트는 어두운 보라 (게시판 모드)
  * @param {function} props.onDotClick - 도트 클릭 시 콜백 (contributor)
  */
-export default function DotCanvas({ positions, contributors, onDotClick }) {
+export default function DotCanvas({ positions, contributors, assignments, onDotClick }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [tooltip, setTooltip] = useState(null);
@@ -213,11 +230,45 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     dotsRef.current = positions.map((p, i) => {
       let shape, baseSize, palette;
 
+      // 게시판 모드: assignments[i]가 없으면 미점등 (어두운 보라)
+      const boardMode = !!assignments;
+      const assigned = boardMode ? assignments[i] ?? null : undefined;
+      const unlit = boardMode && !assigned;
+
+      if (unlit) {
+        // 미점등: 작고 어두운 보랏빛 점 — 메시지를 기다리는 별
+        const dotShape = Math.random() < 0.9 ? 'circle' : 'sparkle';
+        return {
+          px: offsetX + p.x * size,
+          py: offsetY + p.y * size,
+          baseRadius: 0.9 + Math.random() * 1.6,
+          fade: (p.fade ?? 1) * 0.4,
+          unlit: true,
+          shape: dotShape,
+          color: UNLIT_PALETTE[Math.floor(Math.random() * UNLIT_PALETTE.length)],
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.005,
+          donor: null,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.004 + Math.random() * 0.01,   // 아주 느린 숨쉬기
+          glowPhase: Math.random() * Math.PI * 2,
+          glowSpeed: 0.002 + Math.random() * 0.005,
+          flickerTimer: 0,
+          flickerInterval: Infinity,               // 깜빡임 없음
+          flickerDuration: 0,
+        };
+      }
+
       if (p.zone === 'core') {
-        // 코어: 밀집된 작은 원, 웜 화이트~골드
+        // 이너 코어: 밝은 화이트, 크기도 좀 더 크게 (무게감)
         shape = Math.random() < 0.85 ? 'circle' : 'sparkle';
-        baseSize = 1.2 + Math.random() * 2;
+        baseSize = 1.8 + Math.random() * 2.6;
         palette = CORE_PALETTE;
+      } else if (p.zone === 'bulge') {
+        // 벌지: 코어를 감싸는 골드빛
+        shape = Math.random() < 0.85 ? 'circle' : 'sparkle';
+        baseSize = 1.3 + Math.random() * 2;
+        palette = BULGE_PALETTE;
       } else if (p.zone === 'arm') {
         // 나선팔: 크기 다양한 원 + 반짝이, 팔별 색상 계열 (+가끔 다른 색 섞임)
         const r = Math.random();
@@ -237,7 +288,7 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
           ? ARM_PALETTES[(p.arm ?? 0) % ARM_PALETTES.length]  // 팔 고유색
           : mixRoll < 0.87
             ? ARM_PALETTES[Math.floor(Math.random() * ARM_PALETTES.length)] // 다른 팔 색 섞임
-            : CORE_PALETTE;  // 골드/화이트 스프링클
+            : BULGE_PALETTE;  // 골드/화이트 스프링클
       } else if (p.zone === 'haze') {
         // 헤이즈: 팔 주변 희미한 먼지 (작고 어둡게)
         shape = 'circle';
@@ -266,11 +317,12 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
         px: offsetX + p.x * size,
         py: offsetY + p.y * size,
         baseRadius: baseSize,
+        fade: p.fade ?? 1,   // 중심=1, 가장자리로 갈수록 감소
         shape,
         color: palette[Math.floor(Math.random() * palette.length)],
         rotation: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.01,      // 천천히 회전
-        donor: getDonor(i),
+        donor: assignments ? assignments[i] : getDonor(i),
         // 개별 반짝임을 위한 파라미터
         phase: Math.random() * Math.PI * 2,
         speed: 0.008 + Math.random() * 0.025,       // 각자 다른 반짝임 속도
@@ -281,7 +333,7 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
         flickerDuration: 15 + Math.random() * 30,     // 깜빡임 지속 시간
       };
     });
-  }, [dims, positions, getDonor]);
+  }, [dims, positions, getDonor, assignments]);
 
   // 애니메이션 루프
   useEffect(() => {
@@ -322,12 +374,12 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
           }
         }
 
-        // 종합 밝기
-        const brightness = 0.25 + basePulse * 0.35 + glowPulse * 0.2 + flicker;
+        // 종합 밝기 (fade: 중심부는 진하게, 가장자리는 옅게)
+        const brightness = (0.25 + basePulse * 0.35 + glowPulse * 0.2 + flicker) * dot.fade;
         const alpha = Math.min(brightness, 1);
 
-        // 크기: 밝을 때 살짝 커짐
-        const r = dot.baseRadius + basePulse * 0.8 + flicker * 2;
+        // 크기: 밝을 때 살짝 커짐 + 가장자리는 살짝 작게
+        const r = (dot.baseRadius + basePulse * 0.8 + flicker * 2) * (0.7 + 0.3 * dot.fade);
         const { r: cr, g: cg, b: cb } = dot.color;
 
         // 글로우 (밝은 도트 주변에 부드러운 빛)
