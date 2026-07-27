@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Netlify 환경변수 (Site settings → Environment variables)
-// VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-const url = import.meta.env.VITE_SUPABASE_URL || '';
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// 기본값: conference-qa 프로젝트 (publishable key는 공개 안전 — RLS로 보호됨)
+// 환경변수로 재정의 가능: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+const url = import.meta.env.VITE_SUPABASE_URL
+  || 'https://scwapmjgghyfbrlradhg.supabase.co';
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+  || 'sb_publishable_Egw9_q5rBwnMq1ezLtdzgw_7tdVqdiQ';
 
 /** Supabase 미설정 시 null → localStorage 폴백으로 동작 */
 export const supabase = url && key ? createClient(url, key) : null;
@@ -14,7 +16,7 @@ const LS_KEY = 'galaxy-board-messages';
 export async function fetchMessages() {
   if (supabase) {
     const { data, error } = await supabase
-      .from('messages')
+      .from('galaxy_messages')
       .select('id, name, message, created_at')
       .order('created_at', { ascending: true });
     if (error) throw error;
@@ -31,7 +33,7 @@ export async function fetchMessages() {
 /** 메시지 등록 */
 export async function addMessage(name, message) {
   if (supabase) {
-    const { error } = await supabase.from('messages').insert({ name, message });
+    const { error } = await supabase.from('galaxy_messages').insert({ name, message });
     if (error) throw error;
     return;
   }
