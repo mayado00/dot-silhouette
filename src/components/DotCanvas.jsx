@@ -11,6 +11,14 @@ const PALETTE = [
   { r: 178, g: 166, b: 60 },   // 올리브 골드
 ];
 
+// 은하 코어용 따뜻한 팔레트 (화이트~골드)
+const CORE_PALETTE = [
+  { r: 255, g: 250, b: 235 },  // 웜 화이트
+  { r: 255, g: 226, b: 150 },  // 소프트 골드
+  { r: 255, g: 200, b: 120 },  // 골드
+  { r: 250, g: 240, b: 220 },  // 아이보리
+];
+
 // 모양 종류: 확률 가중치 (원과 작은 별이 다수, 큰 장식은 소수)
 const SHAPES = ['circle', 'sparkle', 'star4', 'cross', 'flower', 'square', 'diamond'];
 
@@ -174,7 +182,9 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     const offsetY = padding + (availH - size) / 2;
 
     dotsRef.current = positions.map((p, i) => {
-      const shape = pickShape();
+      const isCore = p.zone === 'core';
+      // 코어는 대부분 원(밀집된 빛), 나머지는 다양한 모양
+      const shape = isCore && Math.random() < 0.8 ? 'circle' : pickShape();
       // 큰 장식 모양은 크게, 원은 작게
       const isAccent = shape !== 'circle' && Math.random() < 0.15;
       const baseSize = shape === 'circle'
@@ -183,12 +193,14 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
           ? 6 + Math.random() * 7
           : 2.5 + Math.random() * 3.5;
 
+      const palette = isCore ? CORE_PALETTE : PALETTE;
+
       return {
         px: offsetX + p.x * size,
         py: offsetY + p.y * size,
         baseRadius: baseSize,
         shape,
-        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+        color: palette[Math.floor(Math.random() * palette.length)],
         rotation: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.01,      // 천천히 회전
         donor: getDonor(i),
