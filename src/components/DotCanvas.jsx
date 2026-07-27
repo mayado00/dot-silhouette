@@ -19,6 +19,35 @@ const CORE_PALETTE = [
   { r: 250, g: 240, b: 220 },  // 아이보리
 ];
 
+// 나선팔별 색상 계열 (팔마다 다른 색으로 나선 흐름이 드러남)
+const ARM_PALETTES = [
+  [ // arm 0: 핑크~마젠타 계열
+    { r: 255, g: 94, b: 200 },
+    { r: 255, g: 140, b: 220 },
+    { r: 230, g: 80, b: 170 },
+    { r: 245, g: 169, b: 124 },  // 피치 (섞임)
+  ],
+  [ // arm 1: 블루~시안 계열
+    { r: 46, g: 143, b: 219 },
+    { r: 100, g: 180, b: 240 },
+    { r: 70, g: 120, b: 230 },
+    { r: 150, g: 210, b: 250 },
+  ],
+  [ // arm 2: 퍼플~바이올렛 계열
+    { r: 165, g: 123, b: 240 },
+    { r: 190, g: 150, b: 250 },
+    { r: 130, g: 90, b: 220 },
+    { r: 220, g: 180, b: 255 },
+  ],
+];
+
+// 배경 별 팔레트 (희미한 화이트/옐로)
+const BG_PALETTE = [
+  { r: 244, g: 244, b: 240 },
+  { r: 255, g: 240, b: 200 },
+  { r: 200, g: 210, b: 230 },
+];
+
 // 모양 종류: 확률 가중치 (원과 작은 별이 다수, 큰 장식은 소수)
 const SHAPES = ['circle', 'sparkle', 'star4', 'cross', 'flower', 'square', 'diamond'];
 
@@ -182,18 +211,36 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     const offsetY = padding + (availH - size) / 2;
 
     dotsRef.current = positions.map((p, i) => {
-      const isCore = p.zone === 'core';
-      // 코어는 대부분 원(밀집된 빛), 나머지는 다양한 모양
-      const shape = isCore && Math.random() < 0.8 ? 'circle' : pickShape();
-      // 큰 장식 모양은 크게, 원은 작게
-      const isAccent = shape !== 'circle' && Math.random() < 0.15;
-      const baseSize = shape === 'circle'
-        ? 1.5 + Math.random() * 2
-        : isAccent
-          ? 6 + Math.random() * 7
-          : 2.5 + Math.random() * 3.5;
+      let shape, baseSize, palette;
 
-      const palette = isCore ? CORE_PALETTE : PALETTE;
+      if (p.zone === 'core') {
+        // 코어: 밀집된 작은 원, 웜 화이트~골드
+        shape = Math.random() < 0.85 ? 'circle' : 'sparkle';
+        baseSize = 1.2 + Math.random() * 2;
+        palette = CORE_PALETTE;
+      } else if (p.zone === 'arm') {
+        // 나선팔: 작은 원 위주 + 가끔 반짝이, 팔별 색상 계열
+        const r = Math.random();
+        shape = r < 0.78 ? 'circle' : r < 0.93 ? 'sparkle' : 'star4';
+        const isAccent = shape !== 'circle' && Math.random() < 0.12;
+        baseSize = isAccent ? 4.5 + Math.random() * 3.5 : 1.2 + Math.random() * 2.2;
+        palette = ARM_PALETTES[(p.arm ?? 0) % ARM_PALETTES.length];
+      } else if (p.zone === 'bg') {
+        // 배경 별: 아주 작고 희미하게
+        shape = Math.random() < 0.6 ? 'circle' : 'sparkle';
+        baseSize = 0.8 + Math.random() * 1.5;
+        palette = BG_PALETTE;
+      } else {
+        // 일반 (이미지 실루엣): 기존 다양한 모양 + 네온 팔레트
+        shape = pickShape();
+        const isAccent = shape !== 'circle' && Math.random() < 0.15;
+        baseSize = shape === 'circle'
+          ? 1.5 + Math.random() * 2
+          : isAccent
+            ? 6 + Math.random() * 7
+            : 2.5 + Math.random() * 3.5;
+        palette = PALETTE;
+      }
 
       return {
         px: offsetX + p.x * size,
