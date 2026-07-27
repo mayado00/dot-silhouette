@@ -40,13 +40,13 @@ export default function MessageBoard({ onBack }) {
     return arr;
   }, [positions, litOrder, messages]);
 
-  const load = useCallback(async () => {
-    try {
-      setMessages(await fetchMessages());
-    } catch (e) {
-      console.error('메시지 로드 실패:', e);
-    }
-  }, []);
+  const load = useCallback(
+    () =>
+      fetchMessages()
+        .then(setMessages)
+        .catch((e) => console.error('메시지 로드 실패:', e)),
+    [],
+  );
 
   useEffect(() => { load(); }, [load]);
 
