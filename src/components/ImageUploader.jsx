@@ -14,7 +14,7 @@ export default function ImageUploader({ onImageLoad }) {
     reader.readAsDataURL(file);
   };
 
-  const useSample = (name) => {
+  const loadSample = (name) => {
     onImageLoad(`/samples/${name}.png`);
   };
 
@@ -91,7 +91,7 @@ export default function ImageUploader({ onImageLoad }) {
         {['person', 'heart', 'star'].map((name) => (
           <button
             key={name}
-            onClick={() => useSample(name)}
+            onClick={() => loadSample(name)}
             style={{
               padding: '6px 16px',
               borderRadius: 16,

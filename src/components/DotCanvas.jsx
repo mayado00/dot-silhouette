@@ -136,7 +136,6 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
   const [dims, setDims] = useState({ w: 0, h: 0 });
   const dotsRef = useRef([]); // 렌더 좌표 캐시
   const animRef = useRef(null);
-  const phaseRef = useRef(0);
 
   // 도트에 기부자 매핑 (순환)
   const getDonor = useCallback(
@@ -213,10 +212,8 @@ export default function DotCanvas({ positions, contributors, onDotClick }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    let frame = 0;
 
     const draw = () => {
-      frame++;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, dims.w, dims.h);
 
