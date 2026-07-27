@@ -3,7 +3,7 @@ import { useRef } from 'react';
 /**
  * 이미지 업로드 / 기본 이미지 선택 컴포넌트
  */
-export default function ImageUploader({ onImageLoad }) {
+export default function ImageUploader({ onImageLoad, onOpenBoard }) {
   const inputRef = useRef(null);
 
   const handleFile = (e) => {
@@ -116,6 +116,34 @@ export default function ImageUploader({ onImageLoad }) {
           </button>
         ))}
       </div>
+
+      {onOpenBoard && (
+        <button
+          onClick={onOpenBoard}
+          style={{
+            marginTop: 20,
+            padding: '12px 32px',
+            borderRadius: 24,
+            border: '1px solid rgba(165,123,240,0.5)',
+            background: 'rgba(165,123,240,0.1)',
+            color: '#a57bf0',
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = '#a57bf0';
+            e.target.style.color = '#111';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(165,123,240,0.1)';
+            e.target.style.color = '#a57bf0';
+          }}
+        >
+          ✦ 별에 남긴 이야기 — 메시지 보드
+        </button>
+      )}
     </div>
   );
 }
