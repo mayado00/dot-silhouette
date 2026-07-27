@@ -15,7 +15,8 @@ export default function ImageUploader({ onImageLoad }) {
   };
 
   const loadSample = (name) => {
-    onImageLoad(`/samples/${name}.png`);
+    // galaxy는 이미지 없이 절차적으로 생성
+    onImageLoad(name === 'galaxy' ? 'galaxy' : `/samples/${name}.png`);
   };
 
   return (
@@ -88,7 +89,7 @@ export default function ImageUploader({ onImageLoad }) {
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, margin: 0 }}>
           또는 샘플 사용:
         </p>
-        {['person', 'heart', 'star'].map((name) => (
+        {['person', 'heart', 'star', 'galaxy'].map((name) => (
           <button
             key={name}
             onClick={() => loadSample(name)}

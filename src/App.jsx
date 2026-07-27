@@ -4,6 +4,7 @@ import StoryPopup from './components/StoryPopup';
 import ImageUploader from './components/ImageUploader';
 import contributors from './data/contributors';
 import { imageToPositions } from './utils/imageToPositions';
+import { generateGalaxyPositions } from './utils/galaxyPositions';
 
 export default function App() {
   const [positions, setPositions] = useState([]);
@@ -14,7 +15,10 @@ export default function App() {
   const handleImageLoad = useCallback(async (src) => {
     setLoading(true);
     try {
-      const pts = await imageToPositions(src, { maxDots: 800, sampleRes: 200 });
+      // 'galaxy'는 이미지 대신 절차적 나선 은하 좌표 생성
+      const pts = src === 'galaxy'
+        ? generateGalaxyPositions({ count: 900, arms: 3 })
+        : await imageToPositions(src, { maxDots: 800, sampleRes: 200 });
       setPositions(pts);
       setImageLoaded(true);
     } catch (err) {
